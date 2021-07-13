@@ -3,8 +3,8 @@ package com.google;
 import java.util.*;
 
 public class VideoPlayer {
-  private String currentVideo = null;
-  private Boolean paused = false;
+  private String currentVideo = null; // name of the current video
+  private Boolean paused = false; // flag for the current video
   private final VideoLibrary videoLibrary;
   private final HashMap<String,VideoPlaylist> playlists;
 
@@ -18,8 +18,7 @@ public class VideoPlayer {
   }
 
   public void showAllVideos() {
-    ArrayList<Video> videos = new ArrayList<>();
-    videos = (ArrayList)((ArrayList)videoLibrary.getVideos()).clone();
+    ArrayList<Video> videos = (ArrayList)((ArrayList)videoLibrary.getVideos()).clone();
     Collections.sort(videos);
     System.out.println("Here's a list of all available videos:");
 
@@ -147,12 +146,30 @@ public class VideoPlayer {
     }
   }
 
+  /** Check if the playlist exists and get its name */
+  private String checkAndGetPName(String playlistName) {
+    for (String pname: playlists.keySet()) {
+      if (pname.equalsIgnoreCase(playlistName))
+        return pname;
+    }
+
+    return "";
+  }
+
+  /** Check if the video is in the library and return its title */
+  private String checkAndGetVTitle(String videoId) {
+    for (Video video: videoLibrary.getVideos()) {
+      if (video.getVideoId().equalsIgnoreCase(videoId))
+        return video.getTitle();
+    }
+
+    return "";
+  }
+
   public void createPlaylist(String playlistName) {
-    for (String key: playlists.keySet()) {
-      if (key.equalsIgnoreCase(playlistName)) {
-        System.out.println("Cannot create playlist: A playlist with the same name already exists");
-        return;
-      }
+    if (!checkAndGetPName(playlistName).isEmpty()) {
+      System.out.println("Cannot create playlist: A playlist with the same name already exists");
+      return;
     }
 
     playlists.put(playlistName, new VideoPlaylist(playlistName));
@@ -160,38 +177,21 @@ public class VideoPlayer {
   }
 
   public void addVideoToPlaylist(String playlistName, String videoId) {
-    boolean exists = false;
-    String pvalid = playlistName, vvalid = null;
+    String pvalid = checkAndGetPName(playlistName);
 
-    for (String pname: playlists.keySet()) {
-      if (pname.equalsIgnoreCase(playlistName)) {
-        exists = true;
-        pvalid = pname;
-        break;
-      }
-    }
-
-    if (!exists) {
+    if (pvalid.isEmpty()) {
       System.out.println("Cannot add video to " + playlistName + ": Playlist does not exist");
       return;
     }
 
-    List<Video> videos = videoLibrary.getVideos();
-    exists = false;
+    String vvalid = checkAndGetVTitle(videoId);
 
-    for (Video video: videos) {
-      if (video.getVideoId().equalsIgnoreCase(videoId)) {
-        exists = true;
-        vvalid = video.getTitle();
-        break;
-      }
-    }
-
-    if (!exists) {
+    if (vvalid.isEmpty()) {
       System.out.println("Cannot add video to " + playlistName + ": Video does not exist");
       return;
     }
 
+    // check if the video is flagged
     for (Video video: videoLibrary.getVideos()) {
       if (video.getVideoId().equalsIgnoreCase(videoId)) {
         if (!video.flag.isEmpty()) {
@@ -211,7 +211,7 @@ public class VideoPlayer {
       }
     }
 
-    for (Video video: videos) {
+    for (Video video: videoLibrary.getVideos()) {
       if (video.getTitle().equals(vvalid)) {
         playlists.get(pvalid).addVideo(video);
         System.out.println("Added video to " + playlistName + ": " + vvalid);
@@ -226,31 +226,19 @@ public class VideoPlayer {
       return;
     }
 
-    ArrayList<String> pnames = new ArrayList<>();
-
-    for (String name: playlists.keySet())
-      pnames.add(name);
+    ArrayList<String> pnames = new ArrayList<>(playlists.keySet());
 
     Collections.sort(pnames);
     System.out.println("Showing all playlists:");
 
     for (String name: pnames)
-      System.out.println(name); // one per row?
+      System.out.println(name);
   }
 
   public void showPlaylist(String playlistName) {
-    boolean exist = false;
-    String pvalid = playlistName;
+    String pvalid = checkAndGetPName(playlistName);
 
-    for (String pname: playlists.keySet()) {
-      if (pname.equalsIgnoreCase(playlistName)) {
-        exist = true;
-        pvalid = pname;
-        break;
-      }
-    }
-
-    if (!exist) {
+    if (pvalid.isEmpty()) {
       System.out.println("Cannot show playlist " + playlistName +": Playlist does not exist");
       return;
     }
@@ -272,32 +260,16 @@ public class VideoPlayer {
   }
 
   public void removeFromPlaylist(String playlistName, String videoId) {
-    boolean exist = false;
-    String pvalid = playlistName;
+    String pvalid = checkAndGetPName(playlistName);
 
-    for (String pname: playlists.keySet()) {
-      if (pname.equalsIgnoreCase(playlistName)) {
-        exist = true;
-        pvalid = pname;
-        break;
-      }
-    }
-
-    if (!exist) {
+    if (pvalid.isEmpty()) {
       System.out.println("Cannot remove video from " + playlistName + ": Playlist does not exist");
       return;
     }
 
-    exist = false;
+    String vvalid = checkAndGetVTitle(videoId);
 
-    for (Video video: videoLibrary.getVideos()) {
-      if (video.getVideoId().equalsIgnoreCase(videoId)) {
-        exist = true;
-        break;
-      }
-    }
-
-    if (!exist) {
+    if (vvalid.isEmpty()) {
       System.out.println("Cannot remove video from " + playlistName + ": Video does not exist");
       return;
     }
@@ -305,7 +277,7 @@ public class VideoPlayer {
     for (Video video: playlists.get(pvalid).getVideos()) {
       if (video.getVideoId().equalsIgnoreCase(videoId)) {
         System.out.println("Removed video from " + playlistName + ": " + video.getTitle());
-        playlists.get(pvalid).getVideos().remove(video); // this should remove it
+        playlists.get(pvalid).getVideos().remove(video);
         return;
       }
     }
@@ -314,27 +286,57 @@ public class VideoPlayer {
   }
 
   public void clearPlaylist(String playlistName) {
-    for (String pname: playlists.keySet()) {
-      if (pname.equalsIgnoreCase(playlistName)) {
-        System.out.println("Successfully removed all videos from " + playlistName);
-        playlists.get(pname).getVideos().clear(); // this should remove it
-        return;
-      }
+    String pvalid = checkAndGetPName(playlistName);
+
+    if (!pvalid.isEmpty()) {
+      System.out.println("Successfully removed all videos from " + playlistName);
+      playlists.get(pvalid).getVideos().clear();
+      return;
     }
 
     System.out.println("Cannot clear playlist " + playlistName + ": " + "Playlist does not exist");
   }
 
   public void deletePlaylist(String playlistName) {
-    for (String pname: playlists.keySet()) {
-      if (pname.equalsIgnoreCase(playlistName)) {
-        System.out.println("Deleted playlist: " + playlistName);
-        playlists.remove(pname);
-        return;
-      }
+    String pvalid = checkAndGetPName(playlistName);
+
+    if (!pvalid.isEmpty()) {
+      System.out.println("Deleted playlist: " + playlistName);
+      playlists.remove(pvalid);
+      return;
     }
 
     System.out.println("Cannot delete playlist " + playlistName + ": " + "Playlist does not exist");
+  }
+
+  /** Helper function that prints results of the search */
+  private void printSearchResults(String search, ArrayList<Video> videos) {
+    if (videos.isEmpty()) {
+      System.out.println("No search results for " + search);
+      return;
+    }
+
+    System.out.println("Here are the results for " + search + ":");
+    Collections.sort(videos);
+
+    for (int i = 0; i < videos.size(); ++i)
+      System.out.println(i+1 + ") " + videos.get(i).toString());
+
+    System.out.println("Would you like to play any of the above? If yes, specify the number of the video.");
+    System.out.println("If your answer is not a valid number, we will assume it's a no.");
+    Scanner in = new Scanner(System.in);
+    String choice = in.nextLine();
+    int idx;
+
+    try {
+      idx = Integer.parseInt(choice);
+    }
+    catch (Exception e) {
+      return;
+    }
+
+    if (idx > 0 && idx <= videos.size())
+      playVideo(videos.get(idx-1).getVideoId());
   }
 
   public void searchVideos(String searchTerm) {
@@ -352,38 +354,13 @@ public class VideoPlayer {
       }
     }
 
-    if (videos.isEmpty()) {
-      System.out.println("No search results for " + search);
-      return;
-    }
-
-    System.out.println("Here are the results for " + search + ":");
-    Collections.sort(videos);
-
-    for (int i = 0; i < videos.size(); ++i)
-      System.out.println(i+1 + ") " + videos.get(i).toString());
-
-    System.out.println("Would you like to play any of the above? If yes, specify the number of the video.");
-    System.out.println("If your answer is not a valid number, we will assume it's a no.");
-    Scanner in = new Scanner(System.in);
-    String choice = in.nextLine();
-    int idx = -1;
-
-    try {
-      idx = Integer.parseInt(choice);
-    }
-    catch (Exception e) {
-      return;
-    }
-
-    if (idx > 0 && idx <= videos.size())
-      playVideo(videos.get(idx-1).getVideoId());
+    printSearchResults(search, videos);
   }
 
   public void searchVideosWithTag(String videoTag) {
     String vtag = videoTag;
     videoTag = videoTag.toLowerCase();
-    List<Video> videos = new ArrayList<>();
+    ArrayList<Video> videos = new ArrayList<>();
 
     for (Video video: videoLibrary.getVideos()) {
       if (!video.flag.isEmpty()) continue;
@@ -397,60 +374,29 @@ public class VideoPlayer {
       }
     }
 
-    if (videos.isEmpty()) {
-      System.out.println("No search results for " + vtag);
-      return;
-    }
-
-    System.out.println("Here are the results for " + vtag + ":");
-    Collections.sort(videos);
-
-    for (int i = 0; i < videos.size(); ++i)
-      System.out.println(i+1 + ") " + videos.get(i).toString());
-
-    System.out.println("Would you like to play any of the above? If yes, specify the number of the video.");
-    System.out.println("If your answer is not a valid number, we will assume it's a no.");
-    Scanner in = new Scanner(System.in);
-    String choice = in.nextLine();
-    int idx = -1;
-
-    try {
-      idx = Integer.parseInt(choice);
-    }
-    catch (Exception e) {
-      return;
-    }
-
-    if (idx > 0 && idx <= videos.size())
-      playVideo(videos.get(idx-1).getVideoId());
+    printSearchResults(vtag, videos);
   }
 
-  boolean videoExists(String videoId) {
-    for (Video video: videoLibrary.getVideos())
-      if (video.getVideoId().equalsIgnoreCase(videoId)) return true;
+  private Video getVideoById(String videoId) {
+    for (Video video: videoLibrary.getVideos()) {
+      if (video.getVideoId().equalsIgnoreCase(videoId))
+        return video;
+    }
 
-    return false;
+    return null;
   }
 
   public void flagVideo(String videoId) {
-    if (!videoExists(videoId)) {
+    if (checkAndGetVTitle(videoId).isEmpty()) {
       System.out.println("Cannot flag video: Video does not exist");
       return;
     }
 
-    Video pvideo = null;
+    Video pvideo = getVideoById(videoId);
 
-    for (Video video: videoLibrary.getVideos()) {
-      if (video.getVideoId().equalsIgnoreCase(videoId)) {
-        pvideo = video;
-
-        if (!video.flag.isEmpty()) {
-          System.out.println("Cannot flag video: Video is already flagged");
-          return;
-        }
-
-        break;
-      }
+    if (!pvideo.flag.isEmpty()) {
+      System.out.println("Cannot flag video: Video is already flagged");
+      return;
     }
 
     if (currentVideo != null && currentVideo.equalsIgnoreCase(pvideo.getTitle()))
@@ -462,24 +408,16 @@ public class VideoPlayer {
   }
 
   public void flagVideo(String videoId, String reason) {
-    if (!videoExists(videoId)) {
+    if (checkAndGetVTitle(videoId).isEmpty()) {
       System.out.println("Cannot flag video: Video does not exist");
       return;
     }
 
-    Video pvideo = null;
+    Video pvideo = getVideoById(videoId);
 
-    for (Video video: videoLibrary.getVideos()) {
-      if (video.getVideoId().equalsIgnoreCase(videoId)) {
-        pvideo = video;
-
-        if (!video.flag.isEmpty()) {
-          System.out.println("Cannot flag video: Video is already flagged");
-          return;
-        }
-
-        break;
-      }
+    if (!pvideo.flag.isEmpty()) {
+      System.out.println("Cannot flag video: Video is already flagged");
+      return;
     }
 
     if (currentVideo != null && currentVideo.equalsIgnoreCase(pvideo.getTitle()))
@@ -491,24 +429,16 @@ public class VideoPlayer {
   }
 
   public void allowVideo(String videoId) {
-    if (!videoExists(videoId)) {
+    if (checkAndGetVTitle(videoId).isEmpty()) {
       System.out.println("Cannot remove flag from video: Video does not exist");
       return;
     }
 
-    Video pvideo = null;
+    Video pvideo = getVideoById(videoId);
 
-    for (Video video: videoLibrary.getVideos()) {
-      if (video.getVideoId().equalsIgnoreCase(videoId)) {
-        pvideo = video;
-
-        if (video.flag.isEmpty()) {
-          System.out.println("Cannot remove flag from video: Video is not flagged");
-          return;
-        }
-
-        break;
-      }
+    if (pvideo.flag.isEmpty()) {
+      System.out.println("Cannot remove flag from video: Video is not flagged");
+      return;
     }
 
     pvideo.flag = "";

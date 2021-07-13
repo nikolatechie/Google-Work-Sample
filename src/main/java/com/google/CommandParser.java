@@ -6,7 +6,6 @@ import java.util.List;
  * A class used to parse and execute a user Command.
  */
 class CommandParser {
-
   private final VideoPlayer videoPlayer;
 
   CommandParser(VideoPlayer videoPlayer) {

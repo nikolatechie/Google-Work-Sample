@@ -6,7 +6,7 @@ import java.util.List;
 /** A class used to represent a Playlist */
 class VideoPlaylist {
     String name;
-    List<Video> videos = new ArrayList<Video>();
+    List<Video> videos = new ArrayList<>();
 
     public VideoPlaylist(String name) {
         this.name = name;
@@ -18,12 +18,5 @@ class VideoPlaylist {
 
     public List<Video> getVideos() {
         return videos;
-    }
-
-    public boolean containsVideo(String videoId) {
-        for (Video video: videos)
-            if (video.getVideoId().equalsIgnoreCase(videoId)) return true;
-
-        return false;
     }
 }
